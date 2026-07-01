@@ -1,25 +1,31 @@
-import NotImplementedError from '../utils/NotImplementedError.js';
+import mongoose from 'mongoose';
+import { env } from './env.js';
+
+mongoose.set('strictQuery', true);
 
 /**
- * STUB MODULE — Phase 2 deliverable.
- *
- * This will establish the MongoDB Atlas connection via Mongoose once
- * Phase 2 (Authentication) begins, per 03_DATABASE_SCHEMA.md.
- *
- * Real implementation will:
- *   - import mongoose
- *   - read MONGODB_URI from config/env.js
- *   - connect with mongoose.connect(uri)
- *   - log connection success/failure
- *   - export the connect function for use in server.js
- *
- * The export below is intentionally non-functional. Calling it throws
- * a clear, typed error rather than silently failing or faking a
- * successful connection — server.js must NOT call this until Phase 2
- * adds mongoose as a dependency.
+ * Connects to MongoDB Atlas via Mongoose.
+ * Called once at server startup. Exits the process on failure since
+ * the API is non-functional without a database connection.
  */
 export async function connectDB() {
-  throw new NotImplementedError('Database connection (MongoDB Atlas)', 2);
+  try {
+    const conn = await mongoose.connect(env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000, // fail fast on misconfiguration instead of hanging 30s
+    });
+    // eslint-disable-next-line no-console
+    console.log(`MongoDB connected: ${conn.connection.host}`);
+    return conn;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(`MongoDB connection failed: ${error.message}`);
+    process.exit(1);
+  }
 }
+
+mongoose.connection.on('disconnected', () => {
+  // eslint-disable-next-line no-console
+  console.warn('MongoDB disconnected.');
+});
 
 export default connectDB;

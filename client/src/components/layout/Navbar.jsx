@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { FaBars, FaTimes, FaSearch, FaUserCircle } from 'react-icons/fa';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { FaBars, FaTimes, FaSearch, FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
 import useScrollPosition from '@hooks/useScrollPosition';
+import useAuth from '@hooks/useAuth';
 import { NAV_LINKS, ROUTES } from '@constants/routes';
 import Button from '@components/ui/Button';
 import SearchBar from '@components/common/SearchBar';
@@ -14,8 +15,16 @@ function Navbar() {
   const isScrolled = useScrollPosition(24);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const closeMobileMenu = () => setIsMobileOpen(false);
+
+  const handleLogout = async () => {
+    closeMobileMenu();
+    await logout();
+    navigate(ROUTES.HOME);
+  };
 
   return (
     <header
@@ -60,12 +69,25 @@ function Navbar() {
           >
             <FaSearch size={18} />
           </button>
-          <Link to={ROUTES.LOGIN}>
-            <Button variant="secondary" size="sm">
-              <FaUserCircle size={16} />
-              Login
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              <Link to={ROUTES.DASHBOARD} className="flex items-center gap-2 text-small font-medium text-text-secondary hover:text-orange transition-colors duration-fast">
+                <FaUserCircle size={18} />
+                {user?.username}
+              </Link>
+              <Button variant="secondary" size="sm" onClick={handleLogout}>
+                <FaSignOutAlt size={14} />
+                Log Out
+              </Button>
+            </div>
+          ) : (
+            <Link to={ROUTES.LOGIN}>
+              <Button variant="secondary" size="sm">
+                <FaUserCircle size={16} />
+                Login
+              </Button>
+            </Link>
+          )}
         </div>
 
         <button
@@ -107,12 +129,27 @@ function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-            <Link to={ROUTES.LOGIN} onClick={closeMobileMenu} className="mt-4">
-              <Button variant="primary" className="w-full">
-                <FaUserCircle size={16} />
-                Login
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <div className="mt-4 flex flex-col gap-3">
+                <Link to={ROUTES.DASHBOARD} onClick={closeMobileMenu}>
+                  <Button variant="secondary" className="w-full">
+                    <FaUserCircle size={16} />
+                    {user?.username}
+                  </Button>
+                </Link>
+                <Button variant="primary" className="w-full" onClick={handleLogout}>
+                  <FaSignOutAlt size={16} />
+                  Log Out
+                </Button>
+              </div>
+            ) : (
+              <Link to={ROUTES.LOGIN} onClick={closeMobileMenu} className="mt-4">
+                <Button variant="primary" className="w-full">
+                  <FaUserCircle size={16} />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       )}
